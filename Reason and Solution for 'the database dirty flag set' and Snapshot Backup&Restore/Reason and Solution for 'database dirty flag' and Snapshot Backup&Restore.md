@@ -78,4 +78,16 @@ Once the restore is completed, we could easily **start-up** the node again from 
 
 ## Contact/About us
 
-{{TODO}}
+If you have any questions or anything you would like us to do, please feel free to leave the comment or email us at **info@eos9cat.com**.
+
+If you are interested in running and maintaining a BP node, EOS9CAT are more than happy to help you.
+If you think our content helps you, don't forget to vote for **EOS9CAT- eosninecatbp**. Thank you for your support!
+
+- Facebook - https://www.facebook.com/eos9cat/?modal=admin_todo_tour
+- Telegram - https://t.me/joinchat/IOwgBRJj-6JdxOerWYLOkg
+- Medium - https://medium.com/@master_32654
+- SteemIt - https://steemit.com/@eos9cat/feed
+- Github - https://github.com/EOS9Cat
+- Meetup - 9cat https://www.meetup.com/Vancouver-Internet-Technology-Talents-Networking-9CAT-NET/
+- Reddit - https://www.reddit.com/user/EOS9Cat/
+- Twitter - https://twitter.com/Eos9C
