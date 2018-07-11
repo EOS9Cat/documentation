@@ -1,12 +1,12 @@
-# Reason and Solution for `the database dirty flag set` and Snapshot Backup/Restore
+# EOS - `the database dirty flag set` why and how
 
 ## `nodeos` - the right way to start/stop
 
-We saw lots of different infrastructure architecture of the EOS nodes in  community. Most of them are using the `docker` as we are. One of the frequently asked questions is that when the node docker is stopped, the node couldn't be restarted properly, the most common error is `database dirty flag set`.
+Most of the EOS node infrastructures in the community are built on top of docker. So do we. One of the most common and challenging error is `database dirty flag set` when the node instance shuts down. This leads to the node unable to restart properly from the previous point due to the broken data integrity.
 
 ![](./images/shutdown_error.png)
 
-Referring to our documentation of [How to build BP like a boss (Build Docker Image)]() {{TODO}}, we mentioned the reason that why that error happened and what was the best way to resolve the issue.
+Referring to our documentation of [How to build BP like a boss (Build Docker Image)](https://steemit.com/bitcoin/@eos9cat/how-to-build-bp-like-a-boss-build-bp-docker-image), we mentioned the reason that why that error happened and what was the best way to resolve the issue.
 
 > **Caveat**
 > 
@@ -23,9 +23,22 @@ In terms of the EOS source code, the `nodeos` will take the corresponding action
 
 That's the only way to gracefully shutdown the `nodeos` and only after that, the database won't set the dirty flag and is able to be started again.
 
-Usually the `start/stop` scripts downloaded from the Internet are using the same method, but the process requires the human intervention. That's why, if the docker image was built up with that scripts, the `database dirty flag set` issue consistently happens, when started or stopped by the `docker run` or `docker stop`.
+Launching the `nodeos` by running a `start.sh` in the `dockerfile` is a common way on the Internet now.
 
-Below is the `dockerfile` we use to build our image, quoting from the [How to build BP like a boss (Build Docker Image)]() {{TODO}}
+**start.sh**
+
+`$NODEOSBINDIR/nodeos --data-dir $DATADIR --config-dir $DATADIR "$@" > $DATADIR/stdout.txt 2> $DATADIR/stderr.txt &  echo $! > $DATADIR/nodeos.pid`
+
+**dockerfile**
+
+```dockerfile
+...
+CMD ['./start.sh']
+```
+
+But this requires the human intervention (run `stop.sh`) to gracefully shutdown the `nodeos` before the docker container stops. By running `docker stop` or `docker restart` directly will consistently damage the data integrity and **set the database dirty flag**.
+
+Below is the `dockerfile` we use to build our image, quoting from the [How to build BP like a boss (Build Docker Image)](https://steemit.com/bitcoin/@eos9cat/how-to-build-bp-like-a-boss-build-bp-docker-image)
 
 ```dockerfile
 FROM ubuntu
@@ -33,9 +46,9 @@ RUN mkdir -p /opt/eos_node/data_dir \
     && cd /opt/eos_node
 WORKDIR /opt/eos_node
 COPY ./eos_source/ /opt/eos_node/eos_source/
-EXPOSE 8888/tcp
-EXPOSE 9876/tcp
-EXPOSE 9875/tcp
+EXPOSE 8888/tcp #http
+EXPOSE 9876/tcp #p2p
+EXPOSE 9875/tcp #bnet
 VOLUME /opt/eos_node/data_dir
 ENTRYPOINT ["/opt/eos_node/eos_source/build/programs/nodeos/nodeos", "--data-dir", "/opt/eos_node/data_dir", "--config-dir", "/opt/eos_node/data_dir", "--genesis-json", "/opt/eos_node/data_dir/genesis.json"]
 ```
@@ -44,7 +57,7 @@ ENTRYPOINT ["/opt/eos_node/eos_source/build/programs/nodeos/nodeos", "--data-dir
 
 With the blocks growing every seconds, the EOS node needs more and more time to re-sync or catch up with the other nodes from the 1st block on the net. Backing up the snapshot to be used when the incident happens becomes a critical challenge for each EOS node. 
 
-As we all know, backing up the running node is useless. The database will be flagged invalid to start again. Now that we understand the reason why the problem happens, we could arbitrarily start/stop the EOS node without any damage. Then that makes the **backup/restore** easy-peasy.
+Backing up a running node renders the database flagged invalid and defeats the purpose of a reusable backup. Knowing the root cause of the problem, now we are able to **start / stop** the EOS node with data integrity at any given time. This is the prerequisite for the clean **backup & restore**.
 
 ### Backup
 
