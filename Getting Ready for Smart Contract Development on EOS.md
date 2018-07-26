@@ -107,7 +107,7 @@ The browser should return a json object that should be similar to this:
 Run following command to set-alias:
 
 ```
-alias cleos='docker-compose exec keosd /opt/eosio/bin/cleos -u http://nodeosd:8888 --wallet-url http://localhost:8900'
+alias cleos='docker exec keosd /opt/eosio/bin/cleos -u http://nodeosd:8888 --wallet-url http://localhost:8900'
 ```
 
 Since the cleos alias is set to execute process in the keosd container environment, the **wallet-url** flag is set to localhost of port 8900, and the **u** flag is set to point to the address where nodeos is running, which in this instance is another container. 
