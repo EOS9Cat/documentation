@@ -15,62 +15,75 @@ The EOS developement ecosystem currently features three main toolset to interact
 Make sure your system has 8GB of RAM and 20GB of free hardware space.
 
 
-#### Install Docker
+#### Install Docker and Docker-compose
 
 Docker is a container management service that runs on top of the os kernel to allow for easy applicaiton development and deployment by allowing developers to synthesis a sandbox environment with fine-tuned system environments, variables, and packages.
 
 In order for the to develop with docker containers, it's neccessary to install the necessary files and programs, please follow this guide: https://docs.docker.com/install/ and install docker for your corresponding os.
 
-### Option 1(One Node Configuration with Docker)
+### Option 2(Build with Docker Compose)
 
-#### Pulling the Dev Docker Image
-
-EOSIO provides a Docker image on docker hub - which is the equivalent of Github for Docker - that is pre-packaged with the neccessary toolset needed for developing smart contracts for the EOS blockchain.
+Create a file called docker-compose.yaml with the following content:
 
 ```
-docker pull eosio/eos-dev
+version: "3.5"
+
+services:
+  nodeosd:
+    container_name: nodeosd
+    image: eosio/eos-dev:latest
+    command: /opt/eosio/bin/nodeosd.sh --data-dir /opt/eosio/bin/data-dir -e --access-control-allow-origin=* --contracts-console --http-validate-host=false
+    hostname: nodeosd
+    ports:
+      - 8888:8888
+      - 9876:9876
+    expose:
+      - "8888"
+    volumes:
+      - ./nodeos-data-volume:/opt/eosio/bin/data-dir
+    networks:
+      - eosio
+
+  keosd:
+    container_name: keosd
+    image: eosio/eos-dev:latest
+    command: /opt/eosio/bin/keosd --wallet-dir /opt/eosio/bin/data-dir --http-server-address=127.0.0.1:8900 --http-validate-host=false
+    hostname: keosd
+    volumes:
+      - ./keosd-data-volume:/opt/eosio/bin/data-dir
+    networks:
+      - eosio
+    
+networks:
+  eosio:
+    name: eosio
 ```
 
-*Note: the eos-dev image is significantly
+#### Start Nodeos and Keosd
 
-#### Start Nodeos
-
-In order to initiate a EOS blockchain startup that runs with a single node, type in the command:
-
+Run command:
 ```
-sudo docker container run --rm --name eosio -d -p 8888:8888 -p 9876:9876 -v /tmp/work:/work -v /tmp/eosio/data:/mnt/dev/data -v /tmp/eosio/config:/mnt/dev/config eosio/eos-dev  /bin/bash -c "nodeos -e -p eosio --plugin eosio::wallet_api_plugin --plugin eosio::wallet_plugin --plugin eosio::producer_plugin --plugin eosio::history_plugin --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --plugin eosio::http_plugin -d /mnt/dev/data --config-dir /mnt/dev/config --http-server-address=0.0.0.0:8888 --access-control-allow-origin=* --contracts-console"
+docker-compose up -d
 ```
 
-To spin a docker container from our eos-dev image that was pulled earlier and create an ideal EOS development environment, it's crucial apply certain flags that'll aid through the whold developement process.
-* **rm** flag allows the container to be automatically removed once stopped.
-* **d** flag allows allows container to be run in detached mode (as a daemon in the background)
-* **p** flag allows port binding between host and container - which is useful to access API interface exposed within the container as we'll see later.
-* **v** flag allows for folder mounting between the host and the storage within the container. 
+* **d** flag allows the containers to be run in detached mode (as a daemon in the background)
+
+The above command will essentially spawn two containers base on the eosio-dev docker image with one of each running the Nodeos client responsible for interacting with the blockchain and Keosd for managing the wallet. EOSIO provides a Docker image on docker hub - which is the equivalent of Github for Docker - that is pre-packaged with the neccessary toolset needed for developing smart contracts for the EOS blockchain.
+
+*Note: EOS also offers a eosio docker image on Docker Hub which is significantly smaller in size in comparison to the dev image. The the dev image will be crucial in smart contract development because it contains eosiocpp which is the essential compiler for translating C++ code into web assembly code understandable by EOS blockchain.*
 
 run the following command to check if the node is working properly:
 ```
-sudo docker logs --tail 10 eosio
+sudo docker logs --tail 10 nodeosd
 ```
 
-The output will be somthing similar to this which is logging info that you'll get when you run nodeos in a native environment:
+The output should be similar to the following screenshot:
+![](1.png)
+
+If you would like to stream the logs, you can attach back to the container of nodeosd with the command:
 
 ```
-1929001ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366974ce4e2a... #13929 @ 2018-05-23T16:32:09.000 signed by eosio [trxs: 0, lib: 13928, confirmed: 0]
-1929502ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366aea085023... #13930 @ 2018-05-23T16:32:09.500 signed by eosio [trxs: 0, lib: 13929, confirmed: 0]
-1930002ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366b7f074fdd... #13931 @ 2018-05-23T16:32:10.000 signed by eosio [trxs: 0, lib: 13930, confirmed: 0]
-1930501ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366cd8222adb... #13932 @ 2018-05-23T16:32:10.500 signed by eosio [trxs: 0, lib: 13931, confirmed: 0]
-1931002ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366d5c1ec38d... #13933 @ 2018-05-23T16:32:11.000 signed by eosio [trxs: 0, lib: 13932, confirmed: 0]
-1931501ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366e45c1f235... #13934 @ 2018-05-23T16:32:11.500 signed by eosio [trxs: 0, lib: 13933, confirmed: 0]
-1932001ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000366f98adb324... #13935 @ 2018-05-23T16:32:12.000 signed by eosio [trxs: 0, lib: 13934, confirmed: 0]
-1932501ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 00003670a0f01daa... #13936 @ 2018-05-23T16:32:12.500 signed by eosio [trxs: 0, lib: 13935, confirmed: 0]
-1933001ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 00003671e8b36e1e... #13937 @ 2018-05-23T16:32:13.000 signed by eosio [trxs: 0, lib: 13936, confirmed: 0]
-1933501ms thread-0   producer_plugin.cpp:585       block_production_loo ] Produced block 0000367257fe1623... #13938 @ 2018-05-23T16:32:13.500 signed by eosio [trxs: 0, lib: 13937, confirmed: 0]
-```
-
-If you would like to stream the logs, you can attach back to the container with the command:
-
-```
-sudo docker container attach eosio
+sudo docker container attach nodeos
 ```
 
 or simply:
@@ -87,91 +100,7 @@ http://localhost:8888/v1/chain/get_info
 
 The browser should return a json object that should be similar to this:
 
-```
-{
-  "server_version": "5875549c",
-  "chain_id": "cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f",
-  "head_block_num": 13764,
-  "last_irreversible_block_num": 13763,
-  "last_irreversible_block_id": "000035c3a6a03d75ce5b42952dce1636d8f7c46254170dd10f569f532b529581",
-  "head_block_id": "000035c479992b3350af6a87e1b7f2e34237dbe53ed873355262a4ac5b585c5b",
-  "head_block_time": "2018-07-05T01:03:07.000",
-  "head_block_producer": "eosio",
-  "virtual_block_cpu_limit": 200000000,
-  "virtual_block_net_limit": 1048576000,
-  "block_cpu_limit": 199900,
-  "block_net_limit": 1048576
-}
-```
-
-#### Using Cleos
-
-Cleos being the command line interface that interacts with the EOS blockchain through nodeos and manage the wallects through the Keosd software, will spawn an Keosd on first launch. Since direct interaction with the blockchain will be initiated through the command line most of the time, it'll be more convenient to create a bash alias in the host environment to quickly interact with sandbox environment laying within the container.
-
-```
-alias cleos='docker exec eosio /opt/eosio/bin/cleos --wallet-url http://localhost:8900'
-```
-
-The **wallet-url** flag should point to the address of that Keosd is running on. 
-
-*Note: by default when spwaning Keosd through Cleos, the address of Keosd will be set to port 8900 in order to avoid conflict with Nodeos running at port 8888. If Keosd is directly ran without any arguments, it will use the same http-server-address specified in the config.ini shared with Nodeos, which will result in Keosd set to port 8888.
-
-
-Run cleos command with a help flag in host terminal to verify the alias:
-```
-cleos --help
-```
-
-*Note: the arguments passed with the alias will refer to the environment variable and path that's associated with container context instead of the host.*
-
-Now we are ready for the next step.
-
-
-
-### Option 2(Build with Docker Compose)
-
-Create a file called docker-compose.yaml with the following content:
-
-```
-version: "3"
-
-services:
-  nodeosd:
-    container_name: nodeosd
-    image: eosio/eos-dev:latest
-    command: /opt/eosio/bin/nodeosd.sh --data-dir /opt/eosio/bin/data-dir -e
-    hostname: nodeosd
-    ports:
-      - 8888:8888
-      - 9876:9876
-    expose:
-      - "8888"
-    volumes:
-      - nodeos-data-volume:/opt/eosio/bin/data-dir
-
-  keosd:
-    container_name: keosd
-    image: eosio/eos-dev:latest
-    command: /opt/eosio/bin/keosd --wallet-dir /opt/eosio/bin/data-dir --http-server-address=127.0.0.1:8900
-    hostname: keosd
-    links:
-      - nodeosd
-    volumes:
-      - keosd-data-volume:/opt/eosio/bin/data-dir
-
-volumes:
-  nodeos-data-volume:
-  keosd-data-volume:
-```
-
-#### Start Nodeos and Keosd
-
-Run command:
-```
-docker-compose up -d
-```
-
-The above command will essentially spawn two containers with one of them running the Nodeos client responsible for interacting with the blockchain and Keosd for managing the wallet.
+![](2.png)
 
 #### Set alias
 
@@ -264,6 +193,7 @@ Run the following command to ensure that all the keys are properly imported:
 cleos wallet keys
 ```
 
+
 ### Generate Account:
 
 This is where keys, wallet and account all tie together. In EOS blockchain, your token, smart contract all live in your account. Each account has a owner key pair and active key pair. Active key pair is for signing for transaction and own key pair is for the account ownership. Run the following command to create an account:
@@ -306,6 +236,22 @@ executed transaction: 7dde788c5c75a08ee0e1ebbd7865ad43861b77386372f028db4ab99f93
 #         eosio <= eosio::setabi                {"account":"eosio","abi":"0e656f73696f3a3a6162692f312e30050c6163636f756e745f6e616d65046e616d650f7065...
 ```
 
+*Note: the arguments passed with the alias will refer to the environment variable and path that's associated with container context instead of the host.*
+
+## Final Remark
+
+If the EOS blockchain needs to be shut down, you'll should do it gracefully by issuing the following command.
+```
+docker-compose down
+```
+
+In scenarios in which the EOS blockchain, more specifically nodeosd the daemon that's responsible for running the node, you might get a database is dirty flag which prohibits the nodeosd from resuming after a shutdown. You'll have to run the following command to run nodeos with the added flags of --replay-blockchain --hard-replay-blockchain
+
+```
+docker-compose run --name nodeosd -p 8888:8888 nodeosd /opt/eosio/bin/nodeosd.sh --data-dir /opt/eosio/bin/data-dir -e --access-control-allow-origin=* --contracts-console --http-validate-host=false --replay-blockchain --hard-replay-blockchain
+
+docker-compose run --name keosd keosd
+
+```
 
 Now that we have everything set up, it's time to move on to the next stage of actually writing and deploying  smart contracts in EOS ecosystem. Stay tune for EOS9CAT's next article.
-
