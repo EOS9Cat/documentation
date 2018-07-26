@@ -107,7 +107,7 @@ The browser should return a json object that should be similar to this:
 Run following command to set-alias:
 
 ```
-alias cleos='docker exec keosd /opt/eosio/bin/cleos -u http://nodeosd:8888 --wallet-url http://localhost:8900'
+alias cleos='docker exec -i keosd /opt/eosio/bin/cleos -u http://nodeosd:8888 --wallet-url http://localhost:8900'
 ```
 
 Since the cleos alias is set to execute process in the keosd container environment, the **wallet-url** flag is set to localhost of port 8900, and the **u** flag is set to point to the address where nodeos is running, which in this instance is another container. 
@@ -217,13 +217,14 @@ $ cleos get accounts ${public key}
 
 ## Step Three: Loading the Bios Contract
 
-Now that the wallet and accoutns are properly set up, it's time to deploy the system contract. For the purpose of the tutorial **eosio.bios** will be used, the contract can be found within the folder of /contracts/ inside the container. In the public EOS blockchain, system contract is used manage the staking and unstaking of tokens and reserve bandwidth for CPU and network activity, and memory for contracts. Again, we'll be using the eosio producer account crediential to sign off the contract deployment. 
+Now that the wallet and accoutns are properly set up, it's time to deploy the system contract. For the purpose of the tutorial **eosio.bios** will be used, the contract can be found within the folder of /contracts/ inside the container. In the public EOS blockchain, system contract is used manage the staking and unstaking of tokens and reserve bandwidth for CPU and network activity, and memory for contracts. Again, we'll be using the eosio producer account crediential to sign off the contract deployment.
 
 Run command:
 
 ```
 cleos set contract eosio /contracts/eosio.bios -p eosio@active
 ```
+*Note: Please be aware that the contract location argument refers to the path within the keosd container, and not the path of host machine*
 
 The similar output of the following will denote the successful deployment of the contract:
 
